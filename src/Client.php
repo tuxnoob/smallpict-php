@@ -51,13 +51,19 @@ class Client
 
     /**
      * @param string|resource $source Image binary string, file path, or stream resource
-     * @param OptimizeOptions|null $options Transformation options
+     * @param OptimizeOptions|array<string, mixed>|null $options Transformation options
      * @return OptimizeResult
      * @throws SmallPictException
      */
-    public function optimize($source, ?OptimizeOptions $options = null): OptimizeResult
+    public function optimize($source, $options = null): OptimizeResult
     {
-        $opts = $options ?? new OptimizeOptions();
+        if (is_array($options)) {
+            $opts = OptimizeOptions::fromArray($options);
+        } elseif ($options instanceof OptimizeOptions) {
+            $opts = $options;
+        } else {
+            $opts = new OptimizeOptions();
+        }
         $resolved = $this->resolveSource($source, $opts);
 
         $payload = [

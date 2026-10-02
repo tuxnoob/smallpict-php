@@ -10,6 +10,7 @@ class OptimizeOptions
     private int $quality;
     private ?int $maxWidth;
     private ?int $maxHeight;
+    private ?int $maxDimension;
     private string $fit;
     private bool $lossless;
     private bool $stripMetadata;
@@ -27,12 +28,14 @@ class OptimizeOptions
         bool $stripMetadata = true,
         ?string $filename = null,
         ?string $mimeType = null,
-        ?string $idempotencyKey = null
+        ?string $idempotencyKey = null,
+        ?int $maxDimension = null
     ) {
         $this->format = $format;
         $this->quality = max(1, min(100, $quality));
         $this->maxWidth = $maxWidth;
         $this->maxHeight = $maxHeight;
+        $this->maxDimension = $maxDimension;
         $this->fit = $fit;
         $this->lossless = $lossless;
         $this->stripMetadata = $stripMetadata;
@@ -59,6 +62,11 @@ class OptimizeOptions
     public function getMaxHeight(): ?int
     {
         return $this->maxHeight;
+    }
+
+    public function getMaxDimension(): ?int
+    {
+        return $this->maxDimension;
     }
 
     public function getFit(): string
@@ -106,9 +114,30 @@ class OptimizeOptions
             'quality' => $this->quality,
             'max_width' => $this->maxWidth,
             'max_height' => $this->maxHeight,
+            'max_dimension' => $this->maxDimension,
             'fit' => $this->fit,
             'lossless' => $this->lossless,
             'strip_metadata' => $this->stripMetadata,
         ];
+    }
+
+    /**
+     * @param array<string, mixed> $options
+     */
+    public static function fromArray(array $options): self
+    {
+        return new self(
+            (string)($options['format'] ?? ImageFormat::AUTO),
+            isset($options['quality']) ? (int)$options['quality'] : 80,
+            isset($options['max_width']) ? (int)$options['max_width'] : (isset($options['maxWidth']) ? (int)$options['maxWidth'] : null),
+            isset($options['max_height']) ? (int)$options['max_height'] : (isset($options['maxHeight']) ? (int)$options['maxHeight'] : null),
+            (string)($options['fit'] ?? FitMode::COVER),
+            (bool)($options['lossless'] ?? false),
+            (bool)($options['strip_metadata'] ?? ($options['stripMetadata'] ?? true)),
+            isset($options['filename']) ? (string)$options['filename'] : null,
+            isset($options['mime_type']) ? (string)$options['mime_type'] : (isset($options['mimeType']) ? (string)$options['mimeType'] : null),
+            isset($options['idempotency_key']) ? (string)$options['idempotency_key'] : (isset($options['idempotencyKey']) ? (string)$options['idempotencyKey'] : null),
+            isset($options['max_dimension']) ? (int)$options['max_dimension'] : (isset($options['maxDimension']) ? (int)$options['maxDimension'] : null)
+        );
     }
 }

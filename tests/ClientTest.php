@@ -171,4 +171,42 @@ class ClientTest extends TestCase
         $this->assertSame(0.0, $result->getSavingsPercentage());
         $this->assertSame(0, $result->getBytesSaved());
     }
+
+    public function testOptimizeWithMaxDimensionAndArrayOptions(): void
+    {
+        $mockHttp = new class implements HttpClientInterface {
+            public function send(string $method, string $url, array $headers = [], ?string $body = null, float $timeout = 30.0): array
+            {
+                $data = json_decode((string)$body, true);
+                TestCase::assertSame(1600, $data['options']['max_dimension']);
+                TestCase::assertSame('webp', $data['options']['format']);
+                TestCase::assertTrue($data['options']['lossless']);
+
+                return [
+                    'status' => 200,
+                    'headers' => ['content-type' => 'application/json'],
+                    'body' => (string)json_encode([
+                        'job_id' => 'job_php_dim_1',
+                        'status' => 'completed',
+                        'url' => 'https://cdn.smallpict.app/opt/photo.webp',
+                        'format' => 'webp',
+                        'original_size' => 100000,
+                        'compressed_size' => 40000,
+                        'bytes_saved' => 60000,
+                        'savings_percentage' => 60.0,
+                    ]),
+                ];
+            }
+        };
+
+        $client = new Client(new Config('sp_sdk_test_1234567890'), null, $mockHttp);
+        $result = $client->optimize('raw binary test data', [
+            'format' => 'webp',
+            'max_dimension' => 1600,
+            'lossless' => true,
+        ]);
+
+        $this->assertSame('job_php_dim_1', $result->getJobId());
+        $this->assertSame(60.0, $result->getSavingsPercentage());
+    }
 }
